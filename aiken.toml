@@ -1,0 +1,14 @@
+name = "ken_/cardano_loans_aiken"
+version = "0.0.0"
+license = "Apache-2.0"
+description = "Aiken contracts for project 'ken_/cardano_loans_aiken'"
+
+[repository]
+user = "ken_"
+project = "cardano_loans_aiken"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "main"
+source = "github"
