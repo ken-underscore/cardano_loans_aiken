@@ -8,8 +8,8 @@ import {
     Unit,
     Data
   } from "https://deno.land/x/lucid@0.10.4/mod.ts";
-import { CardanoLoansBeaconPolicy as Beacon } from "./plutus.ts";
-import { CardanoLoansLoan as Loan } from "./plutus.ts";
+import { CardanoLoansBeaconPolicy as Beacon } from "../plutus.ts";
+import { CardanoLoansLoan as Loan } from "../plutus.ts";
 
   // Basic end to end tests
   

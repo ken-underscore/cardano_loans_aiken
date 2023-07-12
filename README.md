@@ -7,6 +7,10 @@ A project for me to learn more about beacon tokens (I'm a big fan) and gain expe
 ## Current Status
 I've completed the translation of the smart contract code and added a basic set of end to end tests using the Lucid emulator which outputs the actions you can take along with their costs, run using a single asset as collateral.
 
+cd test
+
+deno run --allow-net test.ts
+
 Create Ask Fee: .385011 ADA
 
 Close Ask Fee: .696675 ADA
