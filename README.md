@@ -7,21 +7,21 @@ A project for me to learn more about beacon tokens (I'm a big fan) and gain expe
 ## Current Status
 I've completed the translation of the smart contract code and added a basic set of end to end tests using the Lucid emulator which outputs the actions you can take along with their costs, run using a single asset as collateral.
 
-Create Ask Fee: 385011
+Create Ask Fee: .385011 ADA
 
-Close Ask Fee: 696675
+Close Ask Fee: .696675 ADA
 
-Create Offer Fee: 389865
+Create Offer Fee: 0.389865 ADA
 
-Close Offer Fee: 706932
+Close Offer Fee: 0.706932 ADA
 
-Accept Offer Fee: 928972
+Accept Offer Fee: 0.928972 ADA
 
-Partial Repayment Fee: 623173
+Partial Repayment Fee: 0.623173 ADA
 
-Full Repayment Fee: 788642
+Full Repayment Fee: 0.788642 ADA
 
-Claim Fee: 719678
+Claim Fee: 0.719678 ADA
 
 
 
