@@ -1,37 +1,20 @@
 # A Cardano Loans Aiken Implementation
+This project attempts to translate the proof of concept version of cardano-loans here https://github.com/fallen-icarus/cardano-loans from plutus-tx to Aiken.
 
 ## Motivation
-I've been a fan of the beacon tokens pattern for a little while now and I was looking for a project to get my hands dirty with Aiken, so this was a two birds one stone kind of deal.
+A project for me to learn more about beacon tokens (I'm a big fan) and gain experience with Aiken. I also learned a lot about smart contracts on Cardano in general thanks to the wonderfully documented code in the original repo.
 
 ## Current Status
-I completed translating the plutus tx implementation to Aiken but I have currently only tested a basic happy path. My testing was done manually via some hacked together Lucid code and web wallets, quite tedious/slow. Before testing/benchmarking the rest I will attempt to translate the Lucid code into end-to-end tests using the Lucid emulator instead.
+I've completed the translation of the smart contract code and added a basic set of end to end tests using the Lucid emulator which outputs the actions you can take along with their costs, run using a single asset as collateral.
 
-Create an Ask - 0.386463 ADA
+Create Ask Fee: 385011
+Close Ask Fee: 696675
+Create Offer Fee: 389865
+Close Offer Fee: 706932
+Accept Offer Fee: 928972
+Partial Repayment Fee: 623173
+Full Repayment Fee: 788642
+Claim Fee: 719678
 
-Close an Ask - Not tested
 
-Create an Offer - 0.389753 ADA
-
-Close an Offer - Not tested
-
-Accept an Offer - 0.918352 ADA
-
-Make a partial payment - 0.621829 ADA
-
-Fully pay off loan - 0.783467 ADA
-
-Claim an expired loan - Not tested
-
-Claim a fully paid off loan - 0.7131 ADA
-
-## Todo
-Translate Lucid code into end-to-end tests with Lucid emulator
-
-Try some performance tuning, first pass was just to get something working
-
-Make repo public
-
-Include benchmarks that make use of reference scripts
-
-Add one of the "Potential Future Features"
 

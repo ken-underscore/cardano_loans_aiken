@@ -123,21 +123,19 @@ validator {
         // Must be exactly 2 inputs from this address, one Ask and one Offer
         let (ask_val, ask_datum, offer_val, offer_datum) =
           ask_and_offer_data(inputs, i_addr)
-        expect Output(_, o_val, InlineDatum(o_datum), _) =
-          output_to_script(outputs, i_addr)
+        // There must be exactly one output to script address
+        expect [Output(_, o_val, InlineDatum(o_datum), _)] =
+          list.filter(outputs, fn(output) { output.address == i_addr })
         let loan_beacon =
           when datum is {
             AskDatum { loan_beacon, .. } -> loan_beacon
             OfferDatum { loan_beacon, .. } -> loan_beacon
             _other -> error @"Wrong datum type"
           }
-        // Ask beacon with Ask datum, Offer beacon with Offer datum
-        expect True =
-          value.quantity_of(ask_val, loan_beacon, "Ask") == 1 && value.quantity_of(
-            offer_val,
-            loan_beacon,
-            "Offer",
-          ) == 1
+        // Ask beacon must be with Ask datum
+        expect True = value.quantity_of(ask_val, loan_beacon, "Ask") == 1
+        // Offer beacon must be with Offer datum
+        expect True = value.quantity_of(offer_val, loan_beacon, "Offer") == 1
         // Input datums must agree
         expect True = datums_agree(ask_datum, offer_datum)
         // Inputs must only have the Ask And Offer beacons
@@ -154,11 +152,12 @@ validator {
           normalize_collateral(collateralization, o_val)
             |> rational.compare_with(>=, rational.from_int(principle))
         // The Active beacon must be minted to this address
-        value.quantity_of(mint, loan_beacon, "Active") == 1 && value.quantity_of(
-          o_val,
-          loan_beacon,
-          "Active",
-        ) == 1
+        list.and(
+          [
+            value.quantity_of(mint, loan_beacon, "Active") == 1,
+            value.quantity_of(o_val, loan_beacon, "Active") == 1,
+          ],
+        )
       }
       RepayLoan -> {
         expect ActiveDatum {
@@ -176,8 +175,9 @@ validator {
         expect True =
           staking_cred_approves(i_addr, extra_signatories, withdrawals)
         if value.quantity_of(i_val, loan_beacon, "Active") == 1 {
-          let Output(_, o_val, InlineDatum(o_datum), _) =
-            output_to_script(outputs, i_addr)
+          // There must be exactly one output to script address
+          expect [Output(_, o_val, InlineDatum(o_datum), _)] =
+            list.filter(outputs, fn(output) { output.address == i_addr })
           // Net difference of assets at script
           let addr_diff =
             i_val
@@ -226,11 +226,12 @@ validator {
             // No other mints or burns
             expect True = list.length(value.flatten(mint)) == 1
             // Active beacon and lender ID must return to this address
-            value.quantity_of(o_val, loan_beacon, lender_id) == 1 && value.quantity_of(
-              o_val,
-              loan_beacon,
-              "Active",
-            ) == 1
+            list.and(
+              [
+                value.quantity_of(o_val, loan_beacon, lender_id) == 1,
+                value.quantity_of(o_val, loan_beacon, "Active") == 1,
+              ],
+            )
           } else {
             // Otherwise partial repayment
             // sum (collateral asset taken / relative value) * (1 + interest) <= loan asset repaid
@@ -388,20 +389,17 @@ fn ask_and_offer_data(
   inputs: List<Input>,
   addr: Address,
 ) -> (Value, LoanDatum, Value, LoanDatum) {
-  when all_addr_inputs(inputs, addr) is {
-    [
-      Input(_, Output(_, x_val, InlineDatum(x_dat), _)),
-      Input(_, Output(_, y_val, InlineDatum(y_dat), _)),
-    ] -> {
-      expect x_loan: LoanDatum = x_dat
-      expect y_loan: LoanDatum = y_dat
-      when (x_loan, y_loan) is {
-        (AskDatum(..), OfferDatum(..)) -> (x_val, x_loan, y_val, y_loan)
-        (OfferDatum(..), AskDatum(..)) -> (y_val, y_loan, x_val, x_loan)
-        _other -> error @"Inputs are not the right phases"
-      }
-    }
-    _other -> error @"There must be exactly two inputs from this address"
+  // There must be exactly two inputs from this address
+  expect [
+    Input(_, Output(_, x_val, InlineDatum(x_dat), _)),
+    Input(_, Output(_, y_val, InlineDatum(y_dat), _)),
+  ] = all_addr_inputs(inputs, addr)
+  expect x_loan: LoanDatum = x_dat
+  expect y_loan: LoanDatum = y_dat
+  when (x_loan, y_loan) is {
+    (AskDatum(..), OfferDatum(..)) -> (x_val, x_loan, y_val, y_loan)
+    (OfferDatum(..), AskDatum(..)) -> (y_val, y_loan, x_val, x_loan)
+    _other -> error @"Inputs are not the right phases"
   }
 }
 
@@ -496,14 +494,6 @@ fn valid_active_datum(
   )
 }
 
-// Gets the output to this address, errors if there is not exactly one output
-fn output_to_script(outputs: List<Output>, addr: Address) -> Output {
-  when list.filter(outputs, fn(output) { output.address == addr }) is {
-    [x] -> x
-    _ -> error @"There must be exactly one output to script address"
-  }
-}
-
 // Convert collateral to units of the asset being lent
 fn normalize_collateral(
   collateralization: List<((PolicyId, AssetName), Ratio)>,
@@ -542,7 +532,6 @@ validator(app_name: AppName, dapp_hash: Hash<Blake2b_224, Script>) {
         let signed = list.has(extra_signatories, pkh)
         one_beacon_minted && ask_outputs_check(outs, pkh, policy, dapp_hash) && signed
       }
-
       MintOfferToken(pkh) -> {
         let mint_check = offer_mint_check(beacon_mint, pkh)
         let destination_check =
@@ -550,14 +539,12 @@ validator(app_name: AppName, dapp_hash: Hash<Blake2b_224, Script>) {
         let signed = list.has(transaction.extra_signatories, pkh)
         mint_check && destination_check && signed
       }
-
       MintActiveToken(b_pkh, l_pkh) -> {
         let mint_check = active_mint_check(beacon_mint, b_pkh)
         let destination_check =
           active_outputs_check(outs, b_pkh, l_pkh, policy, dapp_hash)
         mint_check && destination_check
       }
-
       BurnBeaconToken -> list.all(beacon_mint, fn(beacon) { beacon.2nd < 0 })?
     }
   }
@@ -651,21 +638,16 @@ fn offer_outputs_check(
         expect InlineDatum(inline) = dat
         expect datum: LoanDatum = inline
         // Offer beacon must be stored with Offer datum
-        expect OfferDatum {
-          loan_asset: (loan_policy, loan_asset),
-          principle,
-          ..
-        } = datum
-        // Requested loan amount must be met
-        let loan_principle_met =
-          if
-          loan_policy == value.ada_policy_id && loan_asset == value.ada_policy_id{
-          
+        expect OfferDatum { loan_asset: (l_pol, l_asset), principle, .. } =
+          datum
+        // Requested loan amount must be met by collateral
+        let principle_met =
+          if l_pol == value.ada_policy_id && l_asset == value.ada_policy_id {
             value.lovelace_of(val) >= principle + 3000000
           } else {
-            value.quantity_of(val, loan_policy, loan_asset) >= principle
+            value.quantity_of(val, l_pol, l_asset) >= principle
           }
-        acc && valid_destination && valid_offer_datum(pkh, datum, policy) && loan_principle_met
+        acc && valid_destination && valid_offer_datum(pkh, datum, policy) && principle_met
       } else {
         acc
       }
